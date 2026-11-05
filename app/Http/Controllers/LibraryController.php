@@ -16,19 +16,13 @@ class LibraryController extends Controller
     public function download(Request $r, Product $product)
     {
         abort_unless($r->user()->owns($product), 403);
-
-        if (
-            $product->file_path &&
-            Storage::disk('local')->exists($product->file_path)
-        ) {
-            return Storage::disk('local')->download(
-                $product->file_path
-            );
-        }
-
-        return response()->streamDownload(
-            fn() => print("Berkas contoh: {$product->title}. Letakkan file asli di storage/app/{$product->file_path}"),
-            Str::slug($product->title) . '.txt'
-        );
+        $disk = Storage::disk('s3');
+        abort_unless($product->file_path && $disk->exists($product->file_path), 404, 'File belum tersedia.');
+        $ext = pathinfo($product->file_path, PATHINFO_EXTENSION);
+        return redirect($disk->temporaryUrl(
+            $product->file_path,
+            now()->addMinutes(5),
+            ['ResponseContentDisposition' => 'attachment; filename="' . Str::slug($product->title) . '.' . $ext . '"']
+        ));
     }
 }

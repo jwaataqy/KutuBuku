@@ -41,7 +41,7 @@
                 name="file" accept=".pdf,.epub,.zip">
             @if ($edit && $product->file_path)
                 <p class="mt-1 text-xs text-ink/50">File saat ini: {{ basename($product->file_path) }}
-                    {{ \Illuminate\Support\Facades\Storage::exists($product->file_path) ? '' : '(belum diunggah)' }}</p>
+                    {{ \Illuminate\Support\Facades\Storage::disk('s3')->exists($product->file_path) ? '' : '(belum diunggah)' }}</p></p>
             @endif
         </div>
         <div><label class="mb-1 block font-medium">Deskripsi</label>

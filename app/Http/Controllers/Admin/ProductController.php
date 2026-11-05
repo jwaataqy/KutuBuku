@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -38,7 +39,7 @@ class ProductController extends Controller
     public function index(Request $r)
     {
         $products = Product::with('category')
-            ->when($r->q, fn ($q, $v) => $q->where('title', 'like', "%$v%"))
+            ->when($r->q, fn($q, $v) => $q->where('title', 'like', "%$v%"))
             ->latest()->paginate(15)->withQueryString();
         return view('admin.products.index', compact('products'));
     }
@@ -54,7 +55,7 @@ class ProductController extends Controller
         $d['slug'] = $this->uniqueSlug($d['title']);
         $d['featured'] = $r->boolean('featured');
         if ($r->hasFile('file')) {
-            $d['file_path'] = $r->file('file')->store('ebooks');
+            $d['file_path'] = $r->file('file')->store('ebooks', 's3');
         }
         unset($d['file']);
         Product::create($d);
@@ -72,9 +73,9 @@ class ProductController extends Controller
         $d['featured'] = $r->boolean('featured');
         if ($r->hasFile('file')) {
             if ($product->file_path) {
-                Storage::delete($product->file_path);
+                Storage::disk('s3')->delete($product->file_path);
             }
-            $d['file_path'] = $r->file('file')->store('ebooks');
+            $d['file_path'] = $r->file('file')->store('ebooks', 's3');
         }
         unset($d['file']);
         $product->update($d);
@@ -87,7 +88,7 @@ class ProductController extends Controller
             return back()->withErrors(['delete' => 'Produk ini sudah pernah dibeli, jadi tidak bisa dihapus agar perpustakaan pembeli tetap aman.']);
         }
         if ($product->file_path) {
-            Storage::delete($product->file_path);
+            Storage::disk('s3')->delete($product->file_path);
         }
         $product->delete();
         return back()->with('ok', 'Produk dihapus.');
